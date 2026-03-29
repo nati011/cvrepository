@@ -1,0 +1,26 @@
+@import "@fontsource-variable/montserrat/wght.css";
+@import "@fontsource-variable/raleway/wght.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Kifiya brand tokens — https://brand.kifiya.com */
+:root {
+  --brand-primary: #02404f;
+  --brand-secondary: #eb7d23;
+  --brand-dark: #0a1a1f;
+  --brand-light: #f3f5f6;
+  --background: #f3f5f6;
+  --foreground: #0a1a1f;
+}
+
+.dark {
+  --background: #0a1a1f;
+  --foreground: #f3f5f6;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}

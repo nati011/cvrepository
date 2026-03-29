@@ -1,0 +1,21 @@
+# Copy to config.yaml and adjust. Override path with: -config /path/to.yaml
+# or set CONFIG_PATH before parsing flags (used as default for -config).
+
+database_url: "postgres://cvrepo:cvrepo@localhost:5433/cvrepo?sslmode=disable"
+cv_storage_root: "./data/cvs"
+
+# API listen address (api binary only)
+http_addr: ":8080"
+
+tika_url: "http://localhost:9998"
+meili_host: "http://localhost:7700"
+meili_api_key: "dev_master_key"
+meili_index: "cvs"
+
+# Worker poll interval when no job is available
+worker_poll_interval: "2s"
+
+# Optional: POST /v1/cvs/batch limits (defaults shown if omitted)
+# batch_max_request_bytes: 268435456   # 256 MiB total multipart body
+# batch_max_file_bytes: 33554432       # 32 MiB per PDF
+# batch_max_files: 100

@@ -1,0 +1,38 @@
+# Live reload for the ingest worker. Run: air -c .air.worker.toml
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  args_bin = []
+  bin = "./tmp/cvrepo-worker"
+  cmd = "go build -o ./tmp/cvrepo-worker ./cmd/worker"
+  delay = 500
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "web", "data"]
+  exclude_regex = ["_test.go"]
+  exclude_unchanged = false
+  follow_symlink = false
+  include_ext = ["go", "mod", "sum"]
+  kill_delay = "500ms"
+  log = "tmp/air-worker-build-errors.log"
+  poll = false
+  rerun = false
+  send_interrupt = true
+  stop_on_error = true
+
+[color]
+  app = ""
+  build = "yellow"
+  main = "magenta"
+  runner = "green"
+  watcher = "cyan"
+
+[log]
+  main_only = false
+  time = false
+
+[misc]
+  clean_on_exit = true
+
+[screen]
+  clear_on_rebuild = false
+  keep_scroll = true

@@ -1,0 +1,11 @@
+# Used inside Docker Compose (service DNS names, internal Postgres port 5432).
+# Mounted read-only at /etc/cvrepo/config.yaml for api and worker.
+
+database_url: "postgres://cvrepo:cvrepo@postgres:5432/cvrepo?sslmode=disable"
+cv_storage_root: "/data/cvs"
+http_addr: ":8080"
+tika_url: "http://tika:9998"
+meili_host: "http://meilisearch:7700"
+meili_api_key: "dev_master_key"
+meili_index: "cvs"
+worker_poll_interval: "2s"

@@ -1,0 +1,31 @@
+# Next.js dev server with Fast Refresh. Use this while editing ./web.
+#
+#   cd web && npm ci   # once, so ./web/node_modules exists
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up web
+#
+# Stop any existing production web container first if port 3000 is in use:
+#   docker compose stop web
+
+services:
+  web:
+    build: !reset null
+    image: node:20-bookworm-slim
+    working_dir: /app
+    volumes:
+      - ./web:/app
+    environment:
+      API_URL: http://api:8080
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        if [ ! -d node_modules/next ]; then
+          echo "web: installing dependencies (npm ci)..."
+          npm ci
+        fi
+        exec npm run dev:docker

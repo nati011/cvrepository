@@ -1,0 +1,13 @@
+.git
+.github
+tmp
+data
+**/node_modules
+web/.next
+web/node_modules
+*.md
+.env
+.env.*
+config.yaml
+.air*.toml
+.cursor

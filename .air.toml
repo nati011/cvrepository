@@ -1,0 +1,39 @@
+# Live reload for the HTTP API. Install: go install github.com/air-verse/air@latest
+# Run from repo root: air
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  args_bin = []
+  bin = "./tmp/cvrepo-api"
+  cmd = "go build -o ./tmp/cvrepo-api ./cmd/api"
+  delay = 500
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "web", "data"]
+  exclude_regex = ["_test.go"]
+  exclude_unchanged = false
+  follow_symlink = false
+  include_ext = ["go", "mod", "sum"]
+  kill_delay = "500ms"
+  log = "tmp/air-api-build-errors.log"
+  poll = false
+  rerun = false
+  send_interrupt = true
+  stop_on_error = true
+
+[color]
+  app = ""
+  build = "yellow"
+  main = "magenta"
+  runner = "green"
+  watcher = "cyan"
+
+[log]
+  main_only = false
+  time = false
+
+[misc]
+  clean_on_exit = true
+
+[screen]
+  clear_on_rebuild = false
+  keep_scroll = true

@@ -1,0 +1,103 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cvrepo
+      POSTGRES_PASSWORD: cvrepo
+      POSTGRES_DB: cvrepo
+    # Host 5433 avoids clashing with a local Postgres already bound to 5432
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cvrepo -d cvrepo"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    environment:
+      MEILI_ENV: development
+      MEILI_MASTER_KEY: dev_master_key
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O- http://127.0.0.1:7700/health >/dev/null 2>&1 || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  tika:
+    image: apache/tika:2.9.2.0
+    ports:
+      - "9998:9998"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cvrepo-go:latest
+    command: ["/app/api", "-config", "/etc/cvrepo/config.yaml"]
+    ports:
+      - "8080:8080"
+    volumes:
+      - cvsdata:/data/cvs
+      - ./config.docker.yaml:/etc/cvrepo/config.yaml:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+      tika:
+        condition: service_started
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cvrepo-go:latest
+    command: ["/app/worker", "-config", "/etc/cvrepo/config.yaml"]
+    volumes:
+      - cvsdata:/data/cvs
+      - ./config.docker.yaml:/etc/cvrepo/config.yaml:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+      tika:
+        condition: service_started
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      network: host
+      args:
+        DEPS_MODE: host
+        API_URL: http://api:8080
+        NPM_CONFIG_REGISTRY: ${NPM_CONFIG_REGISTRY:-}
+    image: cvrepo-web:latest
+    ports:
+      - "3000:3000"
+    environment:
+      API_URL: http://api:8080
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  meili_data:
+  cvsdata:

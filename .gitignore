@@ -1,0 +1,8 @@
+/data/
+data/
+*.env
+!/.env.example
+/web/.env.local
+/tmp/
+tmp/
+/config.yaml
