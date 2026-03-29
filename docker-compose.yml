@@ -85,7 +85,7 @@ services:
       dockerfile: Dockerfile
       network: host
       args:
-        DEPS_MODE: host
+        DEPS_MODE: docker
         API_URL: http://api:8080
         NPM_CONFIG_REGISTRY: ${NPM_CONFIG_REGISTRY:-}
     image: cvrepo-web:latest

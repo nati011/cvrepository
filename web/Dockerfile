@@ -3,7 +3,9 @@
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
 
-ARG DEPS_MODE=host
+# docker = npm ci inside the image (works in CI, no host node_modules).
+# host = reuse ./node_modules from build context (faster when present; run `cd web && npm ci` first).
+ARG DEPS_MODE=docker
 ENV DEPS_MODE=${DEPS_MODE}
 ENV NODE_OPTIONS=--dns-result-order=ipv4first
 ARG API_URL=http://api:8080
