@@ -42,13 +42,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       children: [
         Expanded(
           child: chat.messages.isEmpty
-              ? _EmptyChat(
-                  suggestions: ChatNotifier.suggestions,
-                  onTap: (s) {
-                    _ctrl.text = s;
-                    _ask();
-                  },
-                )
+              ? const _EmptyChat()
               : ListView.builder(
                   controller: _scroll,
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -91,10 +85,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 }
 
 class _EmptyChat extends StatelessWidget {
-  final List<String> suggestions;
-  final ValueChanged<String> onTap;
-
-  const _EmptyChat({required this.suggestions, required this.onTap});
+  const _EmptyChat();
 
   @override
   Widget build(BuildContext context) {
@@ -115,36 +106,6 @@ class _EmptyChat extends StatelessWidget {
           'Get evidence-backed answers with citations across all candidate CVs.',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-        ),
-        const SizedBox(height: 24),
-        ...suggestions.map(
-          (s) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: LiCard(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              onTap: () => onTap(s),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: scheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(Icons.auto_awesome,
-                        size: 15, color: scheme.primary),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(s,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                  ),
-                  Icon(Icons.north_east,
-                      size: 15, color: scheme.onSurfaceVariant),
-                ],
-              ),
-            ),
-          ),
         ),
       ],
     );

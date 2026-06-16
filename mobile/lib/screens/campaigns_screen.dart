@@ -103,6 +103,10 @@ class CampaignsScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => openCampaignEditor(context),
+        style: FloatingActionButton.styleFrom(
+          backgroundColor: AppTheme.secondary,
+          foregroundColor: Colors.white,
+        ),
         icon: const Icon(Icons.add),
         label: const Text('New campaign'),
       ),
