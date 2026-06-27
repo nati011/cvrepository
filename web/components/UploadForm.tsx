@@ -64,9 +64,9 @@ export function UploadForm({ onUploaded }: { onUploaded?: () => void }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-lg border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+    <form onSubmit={onSubmit} className="flex flex-col gap-4 rounded-lg border border-slate-100 bg-slate-50/80 p-4">
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="files" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+        <label htmlFor="files" className="text-sm font-medium text-slate-700">
           PDF files
         </label>
         <input
@@ -76,24 +76,24 @@ export function UploadForm({ onUploaded }: { onUploaded?: () => void }) {
           accept="application/pdf,.pdf"
           multiple
           required
-          className="text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-800 hover:file:bg-slate-300 dark:text-slate-400 dark:file:bg-slate-800 dark:file:text-slate-200 dark:hover:file:bg-slate-700"
+          className="text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-200 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-800 hover:file:bg-slate-300"
         />
-        <p className="text-xs text-slate-500 dark:text-slate-500">
+        <p className="text-xs text-slate-500">
           Select one or more PDFs. Each file becomes a separate CV (title defaults to the filename).
         </p>
       </div>
       <button
         type="submit"
         disabled={busy}
-        className="w-fit rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-50 dark:bg-sky-600 dark:hover:bg-sky-500"
+        className="w-fit rounded-lg bg-brand-secondary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-secondary/90 disabled:opacity-50"
       >
         {busy ? "Uploading…" : "Upload documents"}
       </button>
       {message && (
-        <p className="text-sm text-slate-700 dark:text-slate-300">{message}</p>
+        <p className="text-sm text-slate-700">{message}</p>
       )}
       {details && details.some((r) => r.error) && (
-        <ul className="max-h-40 list-inside list-disc overflow-y-auto text-sm text-amber-800 dark:text-amber-200/90">
+        <ul className="max-h-40 list-inside list-disc overflow-y-auto text-sm text-amber-800">
           {details
             .filter((r) => r.error)
             .map((r) => (

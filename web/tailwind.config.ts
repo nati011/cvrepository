@@ -1,7 +1,6 @@
 import type { Config } from "tailwindcss";
 
 export default {
-  darkMode: "class",
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -10,8 +9,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Montserrat Variable"', "Montserrat", "ui-sans-serif", "system-ui", "sans-serif"],
-        display: ['"Raleway Variable"', "Raleway", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ['"Inter Variable"', "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ['"Inter Variable"', "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
       },
       colors: {

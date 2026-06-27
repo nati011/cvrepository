@@ -17,6 +17,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
+	"cvrepo/internal/pipeline"
 	meiliidx "cvrepo/internal/search/meili"
 	fsstorage "cvrepo/internal/storage/fs"
 	pgstore "cvrepo/internal/store/pg"
@@ -35,10 +36,11 @@ type Handler struct {
 	store       *pgstore.Store
 	fs          *fsstorage.Store
 	idx         *meiliidx.Index
+	pipeline    *pipeline.Service
 	batchLimits BatchLimits
 }
 
-func NewHandler(store *pgstore.Store, fs *fsstorage.Store, idx *meiliidx.Index, batch BatchLimits) *Handler {
+func NewHandler(store *pgstore.Store, fs *fsstorage.Store, idx *meiliidx.Index, pipe *pipeline.Service, batch BatchLimits) *Handler {
 	if batch.MaxRequestBytes <= 0 {
 		batch.MaxRequestBytes = 256 << 20
 	}
@@ -48,7 +50,7 @@ func NewHandler(store *pgstore.Store, fs *fsstorage.Store, idx *meiliidx.Index, 
 	if batch.MaxFiles <= 0 {
 		batch.MaxFiles = 100
 	}
-	return &Handler{store: store, fs: fs, idx: idx, batchLimits: batch}
+	return &Handler{store: store, fs: fs, idx: idx, pipeline: pipe, batchLimits: batch}
 }
 
 type cvJSON struct {
@@ -59,6 +61,8 @@ type cvJSON struct {
 	SizeBytes        int64   `json:"size_bytes"`
 	SHA256           string  `json:"sha256"`
 	Status           string  `json:"status"`
+	ProfileStatus    string  `json:"profile_status,omitempty"`
+	Profile          any     `json:"profile,omitempty"`
 	ParseError       *string `json:"parse_error,omitempty"`
 	TextSnippet      *string `json:"text_snippet,omitempty"`
 	CreatedAt        string  `json:"created_at"`
@@ -74,9 +78,16 @@ func toJSON(cv *pgstore.CV, includeSnippet bool) cvJSON {
 		SizeBytes:        cv.SizeBytes,
 		SHA256:           cv.SHA256,
 		Status:           string(cv.Status),
+		ProfileStatus:    string(cv.ProfileStatus),
 		ParseError:       cv.ParseError,
 		CreatedAt:        cv.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:        cv.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
+	}
+	if cv.ProfileStatus == pgstore.ProfileReady && len(cv.Profile) > 0 {
+		var profile any
+		if err := json.Unmarshal(cv.Profile, &profile); err == nil {
+			j.Profile = profile
+		}
 	}
 	if includeSnippet && cv.ExtractedText != nil && *cv.ExtractedText != "" {
 		s := snippet(*cv.ExtractedText, 500)

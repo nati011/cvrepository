@@ -17,6 +17,9 @@ type Config struct {
 	MeiliHost            string
 	MeiliAPIKey          string
 	MeiliIndex           string
+	GroqAPIKey           string
+	GroqModel            string
+	GroqBaseURL          string
 	WorkerPollInterval   time.Duration
 	BatchMaxRequestBytes int64
 	BatchMaxFileBytes    int64
@@ -31,6 +34,9 @@ type yamlFile struct {
 	MeiliHost            string `yaml:"meili_host"`
 	MeiliAPIKey          string `yaml:"meili_api_key"`
 	MeiliIndex           string `yaml:"meili_index"`
+	GroqAPIKey           string `yaml:"groq_api_key"`
+	GroqModel            string `yaml:"groq_model"`
+	GroqBaseURL          string `yaml:"groq_base_url"`
 	WorkerPollInterval   string `yaml:"worker_poll_interval"`
 	BatchMaxRequestBytes int64  `yaml:"batch_max_request_bytes"`
 	BatchMaxFileBytes    int64  `yaml:"batch_max_file_bytes"`
@@ -69,6 +75,9 @@ func LoadFile(path string) (Config, error) {
 		MeiliHost:            y.MeiliHost,
 		MeiliAPIKey:          y.MeiliAPIKey,
 		MeiliIndex:           y.MeiliIndex,
+		GroqAPIKey:           y.GroqAPIKey,
+		GroqModel:            y.GroqModel,
+		GroqBaseURL:          y.GroqBaseURL,
 		WorkerPollInterval:   d,
 		BatchMaxRequestBytes: y.BatchMaxRequestBytes,
 		BatchMaxFileBytes:    y.BatchMaxFileBytes,
@@ -85,6 +94,17 @@ func LoadFile(path string) (Config, error) {
 	}
 	if c.MeiliIndex == "" {
 		c.MeiliIndex = "cvs"
+	}
+	if c.GroqAPIKey == "" {
+		if v := os.Getenv("GROQ_API_KEY"); v != "" {
+			c.GroqAPIKey = v
+		}
+	}
+	if c.GroqModel == "" {
+		c.GroqModel = "llama-3.3-70b-versatile"
+	}
+	if c.GroqBaseURL == "" {
+		c.GroqBaseURL = "https://api.groq.com/openai/v1"
 	}
 	if c.BatchMaxRequestBytes == 0 {
 		c.BatchMaxRequestBytes = 256 << 20

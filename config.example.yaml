@@ -15,6 +15,11 @@ meili_index: "cvs"
 # Worker poll interval when no job is available
 worker_poll_interval: "2s"
 
+# Groq (AI extraction, scoring, chat). API key can also be set via GROQ_API_KEY env.
+groq_api_key: ""
+groq_model: "llama-3.3-70b-versatile"
+groq_base_url: "https://api.groq.com/openai/v1"
+
 # Optional: POST /v1/cvs/batch limits (defaults shown if omitted)
 # batch_max_request_bytes: 268435456   # 256 MiB total multipart body
 # batch_max_file_bytes: 33554432       # 32 MiB per PDF

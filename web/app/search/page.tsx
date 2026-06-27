@@ -5,7 +5,6 @@ export default function SearchPage() {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        eyebrow="Discover"
         title="Search"
         description="Results for your query from the top search bar — titles, filenames, and extracted CV text."
       />

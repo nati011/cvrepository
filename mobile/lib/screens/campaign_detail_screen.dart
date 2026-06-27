@@ -1,6 +1,6 @@
 import 'package:cv_exec_feed/models.dart';
 import 'package:cv_exec_feed/providers/campaign_feed_provider.dart';
-import 'package:cv_exec_feed/providers/jobs_provider.dart';
+import 'package:cv_exec_feed/providers/campaigns_provider.dart';
 import 'package:cv_exec_feed/screens/campaign_review_screen.dart';
 import 'package:cv_exec_feed/screens/feed_screen.dart';
 import 'package:cv_exec_feed/theme.dart';
@@ -24,7 +24,7 @@ class _CampaignDetailScreenState extends ConsumerState<CampaignDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final jobsAsync = ref.watch(jobsProvider);
+    final jobsAsync = ref.watch(campaignsProvider);
     final statsAsync = ref.watch(campaignStatsProvider(widget.campaignId));
     final candidatesAsync =
         ref.watch(campaignFeedProvider(widget.campaignId));
@@ -222,7 +222,7 @@ class _MetadataBlock extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rankAsync = ref.watch(rankStatusProvider(job.id));
+    final rankAsync = ref.watch(campaignRankStatusProvider(job.id));
     final scheme = Theme.of(context).colorScheme;
     final lines = <String>[];
     if (job.hiringManager.isNotEmpty) {

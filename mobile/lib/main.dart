@@ -2,6 +2,7 @@ import 'package:cv_exec_feed/data/providers.dart';
 import 'package:cv_exec_feed/providers/app_provider.dart';
 import 'package:cv_exec_feed/providers/feed_provider.dart';
 import 'package:cv_exec_feed/screens/campaigns_screen.dart';
+import 'package:cv_exec_feed/screens/jobs_screen.dart';
 import 'package:cv_exec_feed/screens/chat_screen.dart';
 import 'package:cv_exec_feed/screens/feed_screen.dart';
 import 'package:cv_exec_feed/screens/lists_screen.dart';
@@ -70,8 +71,15 @@ class _RootTabs extends ConsumerWidget {
       page: FeedScreen(),
     ),
     _NavItem(
+      label: 'Jobs',
+      subtitle: 'Reusable role definitions',
+      icon: Icons.work_outline,
+      selectedIcon: Icons.work,
+      page: JobsScreen(),
+    ),
+    _NavItem(
       label: 'Campaigns',
-      subtitle: 'Roles & ranking',
+      subtitle: 'Hiring initiatives & ranking',
       icon: Icons.campaign_outlined,
       selectedIcon: Icons.campaign,
       page: CampaignsScreen(),

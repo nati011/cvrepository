@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { GeistMono } from "geist/font/mono";
 import { AppShell } from "@/components/AppShell";
 import { BRAND_URL } from "@/lib/brand";
-import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,13 +16,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="light" style={{ colorScheme: "light" }}>
       <body
-        className={`${GeistMono.variable} font-sans antialiased bg-brand-light text-brand-dark dark:bg-brand-dark dark:text-brand-light`}
+        className={`${GeistMono.variable} font-sans antialiased bg-white text-brand-dark`}
       >
-        <Providers>
-          <AppShell>{children}</AppShell>
-        </Providers>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -12,12 +14,19 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"cvrepo/internal/config"
+	"cvrepo/internal/groq"
 	"cvrepo/internal/migrate"
+	"cvrepo/internal/pdftotext"
+	"cvrepo/internal/pipeline"
 	meiliidx "cvrepo/internal/search/meili"
 	fsstorage "cvrepo/internal/storage/fs"
 	pgstore "cvrepo/internal/store/pg"
 	"cvrepo/internal/tika"
 )
+
+type textExtractor interface {
+	ExtractText(ctx context.Context, contentType string, r io.Reader) (string, error)
+}
 
 func main() {
 	def := "config.yaml"
@@ -48,8 +57,32 @@ func main() {
 	if err != nil {
 		log.Fatalf("meilisearch: %v", err)
 	}
-	tikaClient := tika.New(cfg.TikaURL)
+	var extractor textExtractor
+	if os.Getenv("CVREPO_USE_PDFTOTEXT") == "1" {
+		log.Println("using pdftotext for PDF extraction (CVREPO_USE_PDFTOTEXT=1)")
+		extractor = pdftotext.New()
+	} else {
+		extractor = tika.New(cfg.TikaURL)
+	}
+	groqClient := groq.New(cfg.GroqAPIKey, cfg.GroqBaseURL, cfg.GroqModel)
+	pipe := pipeline.New(groqClient)
 	store := pgstore.NewStore(pool)
+
+	if n, err := store.ResetStaleProcessing(ctx); err != nil {
+		log.Printf("reset stale cv processing: %v", err)
+	} else if n > 0 {
+		log.Printf("reset %d cv(s) from processing to pending", n)
+	}
+	if n, err := store.ResetStaleProfileProcessing(ctx); err != nil {
+		log.Printf("reset stale profile processing: %v", err)
+	} else if n > 0 {
+		log.Printf("reset %d cv profile(s) from processing to pending", n)
+	}
+	if n, err := store.ResetStaleRankTasks(ctx); err != nil {
+		log.Printf("reset stale rank tasks: %v", err)
+	} else if n > 0 {
+		log.Printf("reset %d rank task(s) from processing to pending", n)
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -68,7 +101,9 @@ func main() {
 			return
 		default:
 		}
-		runOnce(ctx, store, fs, tikaClient, idx)
+		runOnce(ctx, store, fs, extractor, idx, pipe)
+		runProfileTask(ctx, store, idx, pipe)
+		runRankTask(ctx, store, pipe)
 		select {
 		case <-ctx.Done():
 			return
@@ -77,7 +112,7 @@ func main() {
 	}
 }
 
-func runOnce(ctx context.Context, store *pgstore.Store, fs *fsstorage.Store, tikaClient *tika.Client, idx *meiliidx.Index) {
+func runOnce(ctx context.Context, store *pgstore.Store, fs *fsstorage.Store, extractor textExtractor, idx *meiliidx.Index, pipe *pipeline.Service) {
 	cv, err := store.ClaimPending(ctx)
 	if err != nil {
 		log.Printf("claim: %v", err)
@@ -96,10 +131,10 @@ func runOnce(ctx context.Context, store *pgstore.Store, fs *fsstorage.Store, tik
 		}
 		return
 	}
-	text, err := tikaClient.ExtractText(ctx, cv.ContentType, f)
+	text, err := extractor.ExtractText(ctx, cv.ContentType, f)
 	_ = f.Close()
 	if err != nil {
-		if err := store.MarkFailed(ctx, cv.ID, "tika: "+err.Error()); err != nil {
+		if err := store.MarkFailed(ctx, cv.ID, "extract: "+err.Error()); err != nil {
 			log.Printf("mark failed: %v", err)
 		}
 		return
@@ -115,5 +150,109 @@ func runOnce(ctx context.Context, store *pgstore.Store, fs *fsstorage.Store, tik
 	}
 	if err := idx.IndexCV(ctx, fresh); err != nil {
 		log.Printf("meilisearch index: %v", err)
+	}
+}
+
+func runProfileTask(ctx context.Context, store *pgstore.Store, idx *meiliidx.Index, pipe *pipeline.Service) {
+	if pipe == nil {
+		return
+	}
+	profileCV, err := store.ClaimPendingProfile(ctx)
+	if err != nil {
+		log.Printf("claim pending profile: %v", err)
+		return
+	}
+	if profileCV == nil {
+		return
+	}
+	log.Printf("profiling cv %s", profileCV.ID)
+	if profileCV.ExtractedText == nil || *profileCV.ExtractedText == "" {
+		if err := store.MarkProfileFailed(ctx, profileCV.ID, "empty extracted text"); err != nil {
+			log.Printf("mark profile failed: %v", err)
+		}
+		return
+	}
+	profile, err := pipe.ExtractProfile(ctx, *profileCV.ExtractedText)
+	if err != nil {
+		if err := store.MarkProfileFailed(ctx, profileCV.ID, "groq profile extraction: "+err.Error()); err != nil {
+			log.Printf("mark profile failed: %v", err)
+		}
+		return
+	}
+	profileJSON, err := json.Marshal(profile)
+	if err != nil {
+		if err := store.MarkProfileFailed(ctx, profileCV.ID, "marshal profile: "+err.Error()); err != nil {
+			log.Printf("mark profile failed: %v", err)
+		}
+		return
+	}
+	if err := store.SaveProfile(ctx, profileCV.ID, profileJSON); err != nil {
+		log.Printf("save profile: %v", err)
+		return
+	}
+	freshProfile, err := store.GetByID(ctx, profileCV.ID)
+	if err != nil {
+		log.Printf("reload profiled cv: %v", err)
+		return
+	}
+	if err := idx.IndexCV(ctx, freshProfile); err != nil {
+		log.Printf("meilisearch profile index: %v", err)
+	}
+
+	// Auto-rank: once a CV is profiled, queue it against every existing job.
+	if n, err := store.EnqueueRankTasksForCV(ctx, profileCV.ID); err != nil {
+		log.Printf("auto-enqueue rank tasks for cv %s: %v", profileCV.ID, err)
+	} else if n > 0 {
+		log.Printf("auto-queued cv %s for ranking against %d job(s)", profileCV.ID, n)
+	}
+}
+
+// runRankTask claims and processes a single pending rank task: it scores the CV
+// against the job's JD and persists the result. Errors are recorded on the task
+// so re-ranking can be retried via the queue.
+func runRankTask(ctx context.Context, store *pgstore.Store, pipe *pipeline.Service) {
+	if pipe == nil {
+		return
+	}
+	task, err := store.ClaimPendingRankTask(ctx)
+	if err != nil {
+		log.Printf("claim rank task: %v", err)
+		return
+	}
+	if task == nil {
+		return
+	}
+	cv, err := store.GetByID(ctx, task.CVID)
+	if err != nil {
+		_ = store.MarkRankTaskFailed(ctx, task.ID, "load cv: "+err.Error())
+		return
+	}
+	job, err := store.GetJob(ctx, task.JobID)
+	if err != nil {
+		_ = store.MarkRankTaskFailed(ctx, task.ID, "load job: "+err.Error())
+		return
+	}
+	cvText := ""
+	if cv.ExtractedText != nil {
+		cvText = *cv.ExtractedText
+	}
+	res, err := pipe.RankCV(ctx, job.JDText, cv.Profile, cvText)
+	if err != nil {
+		_ = store.MarkRankTaskFailed(ctx, task.ID, "rank: "+err.Error())
+		return
+	}
+	if err := store.UpsertScore(ctx, &pgstore.Score{
+		CVID:      task.CVID,
+		JobID:     task.JobID,
+		Score:     res.Score,
+		Subscores: res.Subscores,
+		Evidence:  res.Evidence,
+		OnePager:  res.OnePager,
+	}); err != nil {
+		_ = store.MarkRankTaskFailed(ctx, task.ID, "save score: "+err.Error())
+		return
+	}
+	if err := store.MarkRankTaskDone(ctx, task.ID); err != nil {
+		log.Printf("mark rank task done: %v", err)
 	}
 }

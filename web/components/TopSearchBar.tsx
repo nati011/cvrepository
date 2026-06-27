@@ -133,7 +133,7 @@ function TopSearchBarInner() {
           placeholder="Search CVs (skills, titles, filenames…)"
           autoComplete="off"
           aria-controls="top-search-results"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50/90 py-2 pl-9 pr-3 text-sm text-slate-900 shadow-sm outline-none ring-sky-500/20 placeholder:text-slate-400 focus:border-sky-400 focus:bg-white focus:ring-2 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-950"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50/90 py-2 pl-9 pr-3 text-sm text-slate-900 shadow-sm outline-none ring-brand-secondary/20 placeholder:text-slate-400 focus:border-brand-secondary focus:bg-white focus:ring-2"
         />
       </form>
 
@@ -141,16 +141,16 @@ function TopSearchBarInner() {
         <div
           id="top-search-results"
           role="listbox"
-          className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-80 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"
+          className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-80 overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
         >
           {loading && (
-            <p className="px-3 py-2.5 text-sm text-slate-500 dark:text-slate-400">Searching…</p>
+            <p className="px-3 py-2.5 text-sm text-slate-500">Searching…</p>
           )}
           {!loading && err && (
-            <p className="px-3 py-2.5 text-sm text-red-600 dark:text-red-400">{err}</p>
+            <p className="px-3 py-2.5 text-sm text-red-600">{err}</p>
           )}
           {!loading && !err && hits.length === 0 && (
-            <p className="px-3 py-2.5 text-sm text-slate-500 dark:text-slate-400">
+            <p className="px-3 py-2.5 text-sm text-slate-500">
               No matches. Try other keywords or press Enter for the full search page.
             </p>
           )}
@@ -161,13 +161,13 @@ function TopSearchBarInner() {
                 key={h.id}
                 href={`/cvs/${h.id}`}
                 role="option"
-                className="block px-3 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+                className="block px-3 py-2.5 text-sm hover:bg-slate-50"
                 onClick={() => setFocused(false)}
               >
-                <span className="font-medium text-sky-700 dark:text-sky-400">
+                <span className="font-medium text-brand-primary">
                   {h.title || h.original_filename}
                 </span>
-                <span className="mt-0.5 block truncate text-xs text-slate-500 dark:text-slate-400">
+                <span className="mt-0.5 block truncate text-xs text-slate-500">
                   {h.original_filename}
                 </span>
               </Link>
@@ -175,7 +175,7 @@ function TopSearchBarInner() {
           {!loading && !err && hits.length > 0 && (
             <button
               type="button"
-              className="w-full border-t border-slate-100 px-3 py-2 text-left text-xs font-medium text-sky-600 hover:bg-slate-50 dark:border-slate-800 dark:text-sky-400 dark:hover:bg-slate-800"
+              className="w-full border-t border-slate-100 px-3 py-2 text-left text-xs font-medium text-brand-secondary hover:bg-slate-50"
               onClick={() => goFullSearch()}
             >
               View all results on search page →
@@ -190,7 +190,7 @@ function TopSearchBarInner() {
 export function TopSearchBarFallback() {
   return (
     <div className="min-w-0 w-full max-w-md opacity-60">
-      <div className="h-9 w-full rounded-lg bg-slate-100 dark:bg-slate-800" />
+      <div className="h-9 w-full rounded-lg bg-slate-100" />
     </div>
   );
 }

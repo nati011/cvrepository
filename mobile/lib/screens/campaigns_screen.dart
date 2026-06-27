@@ -1,6 +1,6 @@
 import 'package:cv_exec_feed/models.dart';
 import 'package:cv_exec_feed/screens/campaign_review_screen.dart';
-import 'package:cv_exec_feed/providers/jobs_provider.dart';
+import 'package:cv_exec_feed/providers/campaigns_provider.dart';
 import 'package:cv_exec_feed/screens/campaign_detail_screen.dart';
 import 'package:cv_exec_feed/screens/campaign_editor.dart';
 import 'package:cv_exec_feed/theme.dart';
@@ -25,7 +25,7 @@ class CampaignsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final jobsAsync = ref.watch(jobsProvider);
+    final jobsAsync = ref.watch(campaignsProvider);
     final statusFilter = ref.watch(campaignStatusFilterProvider);
 
     return Scaffold(
@@ -48,7 +48,7 @@ class CampaignsScreen extends ConsumerWidget {
                   onTap: () {
                     ref.read(campaignStatusFilterProvider.notifier).state =
                         f.value;
-                    ref.invalidate(jobsProvider);
+                    ref.invalidate(campaignsProvider);
                   },
                 );
               },
@@ -59,7 +59,7 @@ class CampaignsScreen extends ConsumerWidget {
               data: (jobs) {
                 if (jobs.isEmpty) {
                   return RefreshIndicator(
-                    onRefresh: () => ref.read(jobsProvider.notifier).refresh(),
+                    onRefresh: () => ref.read(campaignsProvider.notifier).refresh(),
                     child: ListView(
                       children: const [
                         SizedBox(height: 120),
@@ -74,7 +74,7 @@ class CampaignsScreen extends ConsumerWidget {
                   );
                 }
                 return RefreshIndicator(
-                  onRefresh: () => ref.read(jobsProvider.notifier).refresh(),
+                  onRefresh: () => ref.read(campaignsProvider.notifier).refresh(),
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
                     itemCount: jobs.length,
@@ -94,7 +94,7 @@ class CampaignsScreen extends ConsumerWidget {
                 action: LiButton(
                   label: 'Retry',
                   icon: Icons.refresh,
-                  onPressed: () => ref.read(jobsProvider.notifier).refresh(),
+                  onPressed: () => ref.read(campaignsProvider.notifier).refresh(),
                 ),
               ),
             ),
@@ -103,10 +103,8 @@ class CampaignsScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => openCampaignEditor(context),
-        style: FloatingActionButton.styleFrom(
-          backgroundColor: AppTheme.secondary,
-          foregroundColor: Colors.white,
-        ),
+        backgroundColor: AppTheme.secondary,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('New campaign'),
       ),
@@ -121,7 +119,7 @@ class _CampaignCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
-    final rankAsync = ref.watch(rankStatusProvider(job.id));
+    final rankAsync = ref.watch(campaignRankStatusProvider(job.id));
 
     return LiCard(
       onTap: () {
@@ -160,7 +158,7 @@ class _CampaignCard extends ConsumerWidget {
                   } else if (value == 'rank') {
                     try {
                       await ref
-                          .read(rankStatusProvider(job.id).notifier)
+                          .read(campaignRankStatusProvider(job.id).notifier)
                           .triggerRank(job.id);
                       if (context.mounted) {
                         showAppSnackBar(context, 'Ranking queued');

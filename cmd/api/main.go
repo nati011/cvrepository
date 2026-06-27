@@ -13,8 +13,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"cvrepo/internal/config"
+	"cvrepo/internal/groq"
 	"cvrepo/internal/httpapi"
 	"cvrepo/internal/migrate"
+	"cvrepo/internal/pipeline"
 	meiliidx "cvrepo/internal/search/meili"
 	fsstorage "cvrepo/internal/storage/fs"
 	pgstore "cvrepo/internal/store/pg"
@@ -49,13 +51,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("meilisearch: %v", err)
 	}
+	groqClient := groq.New(cfg.GroqAPIKey, cfg.GroqBaseURL, cfg.GroqModel)
+	pipe := pipeline.New(groqClient)
 
 	store := pgstore.NewStore(pool)
-	h := httpapi.NewHandler(store, fs, idx, httpapi.BatchLimits{
+	h := httpapi.NewHandler(store, fs, idx, pipe, httpapi.BatchLimits{
 		MaxRequestBytes: cfg.BatchMaxRequestBytes,
 		MaxFileBytes:    cfg.BatchMaxFileBytes,
 		MaxFiles:        cfg.BatchMaxFiles,
 	})
+
 	srv := &http.Server{
 		Addr:         cfg.HTTPAddr,
 		Handler:      httpapi.NewRouter(h),

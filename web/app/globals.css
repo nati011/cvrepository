@@ -1,5 +1,4 @@
-@import "@fontsource-variable/montserrat/wght.css";
-@import "@fontsource-variable/raleway/wght.css";
+@import "@fontsource-variable/inter/wght.css";
 
 @tailwind base;
 @tailwind components;
@@ -11,16 +10,32 @@
   --brand-secondary: #eb7d23;
   --brand-dark: #0a1a1f;
   --brand-light: #f3f5f6;
-  --background: #f3f5f6;
+  --background: #ffffff;
   --foreground: #0a1a1f;
 }
 
-.dark {
-  --background: #0a1a1f;
-  --foreground: #f3f5f6;
+html {
+  color-scheme: light;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  font-feature-settings: "cv11";
+  letter-spacing: -0.006em;
+}
+
+@layer components {
+  .btn-cta-primary {
+    @apply rounded-lg bg-brand-secondary font-semibold text-white shadow-sm hover:bg-brand-secondary/90;
+  }
+
+  .btn-cta-on-brand {
+    @apply rounded-lg bg-white font-semibold text-brand-primary shadow-sm hover:bg-white/90;
+  }
 }

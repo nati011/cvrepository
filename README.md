@@ -1,6 +1,6 @@
 # CV repository (v1)
 
-Monorepo with a **Go** API and worker, **PostgreSQL** metadata, **filesystem** PDF storage, **Apache Tika** text extraction, **Meilisearch** keyword search, and a **Next.js** (TypeScript) UI.
+Monorepo with a **Go** API and worker, **PostgreSQL** metadata, **filesystem** PDF storage, **Apache Tika** text extraction, **Meilisearch** keyword search, a **Groq** AI layer (profile extraction + ranking + one-pagers + chat), a **Next.js** (TypeScript) web UI, and a **Flutter** exec feed app.
 
 ## Prerequisites
 
@@ -55,7 +55,20 @@ Monorepo with a **Go** API and worker, **PostgreSQL** metadata, **filesystem** P
    cd web && npm run dev
    ```
 
-   Open [http://localhost:3000](http://localhost:3000). The UI calls the Go API through Next.js Route Handlers using `API_URL` (default `http://localhost:8080`). Saving files under `web/` triggers **Fast Refresh** in the browser.
+   `npm run dev` starts the Go API and worker automatically when they are not already running (via `scripts/ensure-backend.sh`). Open [http://localhost:3000](http://localhost:3000). The UI calls the Go API through Next.js Route Handlers using `API_URL` (default `http://localhost:8080`). Saving files under `web/` triggers **Fast Refresh** in the browser.
+
+   To start everything (backend + web) in one command from the repo root:
+
+   ```bash
+   ./scripts/run-all.sh
+   ```
+
+   If the API keeps dying or ports are stuck, reset the local stack:
+
+   ```bash
+   bash scripts/stop-dev.sh
+   cd web && npm run dev
+   ```
 
    **Web hot reload inside Docker** (bind-mounts `./web`, webpack dev server + polling so saves are picked up reliably):
 
@@ -84,6 +97,57 @@ Meilisearch master key (dev): `dev_master_key` (see `.env.example`)
 - `GET /v1/cvs/{id}`
 - `DELETE /v1/cvs/{id}`
 - `GET /v1/search?q=&limit=`
+- `POST /v1/jobs` — create reusable job definition (title + JD)
+- `GET /v1/jobs` — list job definitions
+- `GET /v1/jobs/{id}`
+- `PUT /v1/jobs/{id}` — update title and job description
+- `DELETE /v1/jobs/{id}`
+- `POST /v1/jobs/{id}/rank`
+- `GET /v1/jobs/{id}/rank`
+- `GET /v1/jobs/{id}/feed?limit=&offset=`
+- `POST /v1/jobs/improve` — AI JD improve (no persist)
+- `POST /v1/campaigns` — create hiring campaign (role + metadata)
+- `GET /v1/campaigns?status=&client=&tag=` — list campaigns
+- `GET /v1/campaigns/{id}`
+- `PUT /v1/campaigns/{id}` — deactivate (status change only)
+- `DELETE /v1/campaigns/{id}` — not allowed (deactivate instead)
+- `GET /v1/campaigns/{id}/stats` — ranked/review funnel analytics
+- `POST /v1/campaigns/{id}/rank`
+- `GET /v1/campaigns/{id}/rank`
+- `GET /v1/campaigns/{id}/feed?limit=&offset=`
+- `POST /v1/campaigns/improve` — AI JD improve (no persist)
+- `POST /v1/cvs/{id}/reactions`
+- `POST /v1/cvs/{id}/comments`
+- `POST /v1/chat`
+- `GET /v1/stats`
+
+## AI configuration
+
+Add Groq settings in `config.yaml` (or use env for key):
+
+```yaml
+groq_api_key: ""
+groq_model: "llama-3.3-70b-versatile"
+groq_base_url: "https://api.groq.com/openai/v1"
+```
+
+You can also set `GROQ_API_KEY` in your shell environment.
+
+## Web admin UI
+
+The web app includes separate admin pages:
+
+- **Job management** at `/jobs` — reusable role definitions (title + JD). Create, edit, delete, and rank CVs against a job description.
+- **Campaign management** at `/campaigns` — operational hiring campaigns with lifecycle status, client metadata, analytics, ranking, and ranked feed output.
+
+## Flutter exec app
+
+The Flutter app lives in [`mobile/`](mobile/README.md). It provides:
+
+- swipe-like candidate feed reactions (shortlist/pass/star),
+- campaign management with lifecycle, metadata, and analytics,
+- chat over CVs with citations,
+- leaderboard and streak stats.
 
 ## Backups
 

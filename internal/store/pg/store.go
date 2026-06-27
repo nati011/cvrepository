@@ -39,10 +39,7 @@ func (s *Store) Create(ctx context.Context, cv *CV) error {
 }
 
 func (s *Store) GetByID(ctx context.Context, id uuid.UUID) (*CV, error) {
-	const q = `
-		SELECT id, title, original_filename, content_type, storage_key, sha256, size_bytes, owner_id, status, parse_error, extracted_text, created_at, updated_at
-		FROM cvs WHERE id = $1
-	`
+	const q = `SELECT ` + cvSelectCols + ` FROM cvs WHERE id = $1`
 	row := s.pool.QueryRow(ctx, q, id)
 	cv, err := scanCV(row)
 	if err != nil {
@@ -68,10 +65,7 @@ func (s *Store) List(ctx context.Context, limit, offset int) ([]CV, int64, error
 	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM cvs`).Scan(&total); err != nil {
 		return nil, 0, err
 	}
-	const q = `
-		SELECT id, title, original_filename, content_type, storage_key, sha256, size_bytes, owner_id, status, parse_error, extracted_text, created_at, updated_at
-		FROM cvs ORDER BY created_at DESC LIMIT $1 OFFSET $2
-	`
+	const q = `SELECT ` + cvSelectCols + ` FROM cvs ORDER BY created_at DESC LIMIT $1 OFFSET $2`
 	rows, err := s.pool.Query(ctx, q, limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -106,7 +100,7 @@ func (s *Store) ClaimPending(ctx context.Context) (*CV, error) {
 	}
 	defer tx.Rollback(ctx)
 	const q = `
-		SELECT id, title, original_filename, content_type, storage_key, sha256, size_bytes, owner_id, status, parse_error, extracted_text, created_at, updated_at
+		SELECT ` + cvSelectCols + `
 		FROM cvs
 		WHERE status = 'pending'
 		ORDER BY created_at ASC
@@ -153,15 +147,36 @@ func (s *Store) MarkFailed(ctx context.Context, id uuid.UUID, parseErr string) e
 	return err
 }
 
+// ResetStaleProcessing moves CVs left in processing back to pending after a worker crash.
+func (s *Store) ResetStaleProcessing(ctx context.Context) (int64, error) {
+	const q = `UPDATE cvs SET status = 'pending', updated_at = $1 WHERE status = 'processing'`
+	tag, err := s.pool.Exec(ctx, q, time.Now().UTC())
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}
+
+// ResetStaleProfileProcessing moves profile extraction left in processing back to pending.
+func (s *Store) ResetStaleProfileProcessing(ctx context.Context) (int64, error) {
+	const q = `UPDATE cvs SET profile_status = 'pending', updated_at = $1 WHERE profile_status = 'processing'`
+	tag, err := s.pool.Exec(ctx, q, time.Now().UTC())
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}
+
 func scanCV(row pgx.Row) (*CV, error) {
 	var cv CV
 	var ownerID *string
 	var parseErr *string
 	var extracted *string
 	var status string
+	var profileStatus string
 	err := row.Scan(
 		&cv.ID, &cv.Title, &cv.OriginalFilename, &cv.ContentType, &cv.StorageKey, &cv.SHA256, &cv.SizeBytes,
-		&ownerID, &status, &parseErr, &extracted, &cv.CreatedAt, &cv.UpdatedAt,
+		&ownerID, &status, &parseErr, &extracted, &cv.Profile, &profileStatus, &cv.CreatedAt, &cv.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -170,6 +185,10 @@ func scanCV(row pgx.Row) (*CV, error) {
 	cv.ParseError = parseErr
 	cv.ExtractedText = extracted
 	cv.Status = CVStatus(status)
+	cv.ProfileStatus = ProfileStatus(profileStatus)
+	if cv.ProfileStatus == "" {
+		cv.ProfileStatus = ProfilePending
+	}
 	if cv.Status != StatusPending && cv.Status != StatusProcessing && cv.Status != StatusReady && cv.Status != StatusFailed {
 		return nil, fmt.Errorf("invalid status %q", status)
 	}

@@ -41,26 +41,27 @@ class _ListsScreenState extends ConsumerState<ListsScreen> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: SegmentedButton<int>(
-            segments: [
-              ButtonSegment<int>(
-                value: 0,
-                label: Text('Liked (${liked.length})'),
-                icon: const Icon(Icons.thumb_up_outlined, size: 16),
-              ),
-              ButtonSegment<int>(
-                value: 1,
-                label: Text('Starred (${starred.length})'),
-                icon: const Icon(Icons.star_outline_rounded, size: 16),
-              ),
-            ],
-            selected: {_segment},
-            onSelectionChanged: (selection) {
-              setState(() => _segment = selection.first);
-            },
-            showSelectedIcon: false,
-            style: SegmentedButton.styleFrom(
-              visualDensity: VisualDensity.compact,
+          child: Align(
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LiFilterChip(
+                  label: 'Liked (${liked.length})',
+                  icon: Icons.thumb_up_outlined,
+                  color: AppTheme.blue,
+                  selected: _segment == 0,
+                  onTap: () => setState(() => _segment = 0),
+                ),
+                const SizedBox(width: 8),
+                LiFilterChip(
+                  label: 'Starred (${starred.length})',
+                  icon: Icons.star_outline_rounded,
+                  color: AppTheme.gold,
+                  selected: _segment == 1,
+                  onTap: () => setState(() => _segment = 1),
+                ),
+              ],
             ),
           ),
         ),
